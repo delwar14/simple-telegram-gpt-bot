@@ -1,8 +1,45 @@
-[build]
-builder = "nixpacks"
-buildCommand = "pip install -r requirements.txt"
+import datetime
+import telegram
+from telegram.ext import Updater, CommandHandler
 
-[deploy]
-startCommand = "python main.py"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 5
+# Replace 'YOUR_BOT_TOKEN' with your actual bot token obtained from BotFather
+TOKEN = '7194751478:AAFKFs3jNOsuJdnLGYDDY8egtkD1zbB00oQ'
+
+# Replace 'YOUR_CHAT_ID' with your actual chat ID
+CHAT_ID = 'cleanleeds_bot'
+
+# List of member names
+member_names = ["Tamzeed", "Sohan", "Tareq", "Sayeed", "Yaman", "Samrat"]
+current_member_index = 0
+
+# Create an Updater object and pass in the bot's token
+updater = Updater(token=TOKEN, use_context=True)
+dispatcher = updater.dispatcher
+
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome! I will remind you to clean the house.")
+
+def clean_reminder(context):
+    global current_member_index
+    # Get the current date
+    current_date = datetime.datetime.now().date()
+    # Calculate the date after 3 days
+    reminder_date = current_date + datetime.timedelta(days=3)
+    # Get the name of the current member
+    current_member_name = member_names[current_member_index]
+    # Send reminder message to the current member
+    context.bot.send_message(chat_id=CHAT_ID, text=f"{current_member_name}, don't forget to clean the house by {reminder_date}")
+    # Increment the member index for the next reminder
+    current_member_index = (current_member_index + 1) % len(member_names)
+
+# Define the command handlers
+start_handler = CommandHandler('start', start)
+dispatcher.add_handler(start_handler)
+
+# Job queue to schedule reminders
+job_queue = updater.job_queue
+job_queue.run_repeating(clean_reminder, interval=datetime.timedelta(days=3), first=0)
+
+# Start the bot
+updater.start_polling()
+updater.idle()
